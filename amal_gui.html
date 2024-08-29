@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blade Sorting Command Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+</head>
+<style>
+    /* Additional styles for customization controls */
+    .customization-panel {
+        margin-top: 20px;
+    }
+
+    .customization-panel label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .customization-panel input {
+        margin-bottom: 10px;
+        width: 100%;
+        padding: 5px;
+    }
+</style>
+</head>
+
+
+<body>
+
+
+<!-- Navigation Bar -->
+<nav>
+    <a href="#home">Home</a>
+    <a href="#visualization">Visualization</a>
+    <a href="#results">Results</a>
+    <a href="#customization">Customization</a>
+    <a href="#help">Help</a>
+    <a href="#export">Export</a>
+    <a href="#feedback">Feedback</a>
+</nav>
+
+<!-- Welcome Screen -->
+<section id="home">
+    <img src="KUSTAR_Logo-removebg-preview.png" alt="KU_LOGO">
+
+    <h1>Welcome to the Blade Sorting Command Center </h1>
+    <p>This system allows you to control and monitor the blade sorting process with real-time data visualization and status updates.</p>
+</section>
+
+<!-- Visualization Section -->
+<section id="visualization">
+    <h2>Robot Visualization</h2>
+    <div>
+        <div>
+            <button id="startBtn" class="button green" onclick="serviceCall('start')">START</button>
+            <button id="homeRobotBtn" class="button blue" onclick="serviceCall('home')">HOME</button>
+            <button id="resume" class="button yellow" onclick="serviceCall('resume')">RESUME</button>
+            <button id="pause" class="button red" onclick="serviceCall('pause')">PAUSE</button>
+        </div>
+        <div>
+            <img src="http://localhost:11315/stream?topic=/Visualize" alt="Robot Stream">
+        </div>
+    </div>
+</section>
+
+<!-- Interactive Status Indicators -->
+<section id="status">
+    <h2>System Status</h2>
+    <div id="statusDisplay">Ready</div>
+</section>
+
+<!-- Results Section -->
+<section id="results">
+    <h2>Results and Outcomes</h2>
+
+</section>
+
+
+
+<!-- Documentation and Help -->
+<section id="help">
+    <h2>Documentation and Help</h2>
+    <div>
+        <p>Here you can find instructions and FAQs to help you use the Blade Sorting Command Center effectively.</p>
+    </div>
+</section>
+
+<!-- Export and Share -->
+<section id="export">
+    <h2>Export and Share</h2>
+    <div>
+        <button onclick="exportData()">Export Data</button>
+        <button onclick="shareResults()">Share Results</button>
+    </div>
+</section>
+
+<!-- Feedback Collection -->
+<section id="feedback">
+    <h2>Feedback</h2>
+    <form>
+        <textarea id="feedbackText" placeholder="Enter your feedback here..." rows="4"></textarea><br>
+        <button type="button" onclick="submitFeedback()">Submit Feedback</button>
+    </form>
+</section>
+
+<!-- Customization and Personalization -->
+<section id="customization">
+    <h2>Customization and Personalization</h2>
+
+    <!-- Toggle Dark Mode -->
+    <div>
+        <label for="themeSwitch">Toggle Dark Mode:</label>
+        <input type="checkbox" id="themeSwitch" onclick="toggleTheme()">
+    </div>
+
+    <!-- Customization Panel -->
+    <div class="customization-panel">
+        <!-- Button Text Customization -->
+        <div class="customization-item">
+            <label for="buttonText">Button Text:</label>
+            <input type="text" id="buttonText" placeholder="Enter button text">
+        </div>
+
+        <!-- Button Color Customization -->
+        <div class="customization-item">
+            <label for="buttonColor">Button Color:</label>
+            <input type="color" id="buttonColor">
+        </div>
+
+        <!-- Button Width Customization -->
+        <div class="customization-item">
+            <label for="buttonWidth">Button Width (px):</label>
+            <input type="number" id="buttonWidth" placeholder="Width in pixels">
+        </div>
+
+        <!-- Button Height Customization -->
+        <div class="customization-item">
+            <label for="buttonHeight">Button Height (px):</label>
+            <input type="number" id="buttonHeight" placeholder="Height in pixels">
+        </div>
+
+    </div>
+    <body>
+        <h1>Select a ROS Topic</h1>
+        <select id="ros-topic-dropdown">
+            <option value="">Select a Topic</option>
+        </select>
+        <p id="message-type"></p>
+        <p>Last /txt_msg received: <span id="msg"></span></p>
+        <script src="script.js"></script>
+    </body>
+</section>
+
+
+
+
+<!-- Scripts -->
+<script src="./jquery-3.2.1.min.js"></script>
+<script src="./roslib.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+<script src="mjpegcanvas.js"></script>
+<script src="./SvgZoom.js"></script>
+<script src="./guiHelper.js" defer></script>
+<script src="./script.js" defer></script>
+<script src="./chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+    var ros = new ROSLIB.Ros({
+    url: 'ws://localhost:9090'  // Replace with your ROS bridge WebSocket URL
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('button');
+        let selectedButton = null;
+
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                selectedButton = button;
+                document.getElementById('buttonText').value = button.textContent;
+                document.getElementById('buttonColor').value = rgbToHex(getComputedStyle(button).backgroundColor);
+                document.getElementById('buttonWidth').value = parseInt(getComputedStyle(button).width, 10);
+                document.getElementById('buttonHeight').value = parseInt(getComputedStyle(button).height, 10);
+                document.getElementById('borderRadius').value = parseInt(getComputedStyle(button).borderRadius, 10);
+            });
+        });
+
+        document.getElementById('buttonText').addEventListener('input', (e) => {
+            if (selectedButton) selectedButton.textContent = e.target.value;
+        });
+
+        document.getElementById('buttonColor').addEventListener('input', (e) => {
+            if (selectedButton) selectedButton.style.backgroundColor = e.target.value;
+        });
+
+        document.getElementById('buttonWidth').addEventListener('input', (e) => {
+            if (selectedButton) selectedButton.style.width = `${e.target.value}px`;
+        });
+
+        document.getElementById('buttonHeight').addEventListener('input', (e) => {
+            if (selectedButton) selectedButton.style.height = `${e.target.value}px`;
+        });
+        
+        function rgbToHex(rgb) {
+            const rgbValues = rgb.match(/\d+/g).map(Number);
+            const hex = rgbValues.map(val => {
+                const hex = val.toString(16);
+                return hex.length === 1 ? `0${hex}` : hex;
+            }).join('');
+            return `#${hex}`;
+        }
+
+        var txt_listener = new ROSLIB.Topic({
+            ros : ros,
+            name : document.getElementById("ros-topic-dropdown").innerHTML,
+            messageType : document.getElementById("message-type").innerHTML
+        });
+
+        txt_listener.subscribe(function(m) {
+            document.getElementById("msg").innerHTML = m.data;
+        });
+    });
+
+</script>
+
+
+
+</body>
+</html>
+
